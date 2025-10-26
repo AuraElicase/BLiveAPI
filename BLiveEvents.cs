@@ -5,6 +5,8 @@ using System.Text;
 using Google.Protobuf;
 using Newtonsoft.Json.Linq;
 using BLiveAPI.Protos;
+using System.Collections.Generic;
+using BLiveAPI.Models;
 
 namespace BLiveAPI;
 
@@ -24,6 +26,7 @@ public abstract class BLiveEvents
         SendSmsReply += OnSendGift;
         SendSmsReply += OnSuperChatMessage;
         SendSmsReply += OnUserToastMsg;
+        SendSmsReply += OnOnlineRank;
     }
 
     /// <summary>
@@ -227,6 +230,38 @@ public abstract class BLiveEvents
         var userName = (string)jsonRawData["data"]["username"];
         UserToastMsg?.Invoke(this, (roleName, giftId, guardLevel, price, num, unit, userId, userName, jsonRawData, rawData));
         return UserToastMsg is not null;
+    }
+
+    /// <summary>
+    ///     在线榜
+    /// </summary>
+    public event BLiveEventHandler<(List<OnlineRankListItemModel>, JObject jsonRawData, byte[] rawData)> OnlineRank;
+
+    [TargetCmd("ONLINE_RANK_V3")]
+    private bool OnOnlineRank(JObject jsonRawData, byte[] rawData)
+    {
+        var base64raw = (string)jsonRawData["data"]["pb"];
+        var protoData = Convert.FromBase64String(base64raw);
+        var deSerializedMsg = GoldRankBroadcast.Parser.ParseFrom(protoData);
+
+        var rankType = deSerializedMsg.RankType;
+
+        var list = deSerializedMsg.OnlineList;
+        List < OnlineRankListItemModel > RankList = new();
+        foreach (var item in list)
+        {
+            RankList.Add(new OnlineRankListItemModel
+            {
+                Uid = item.Uid,
+                Face = item.Face,
+                Score = item.Score,
+                Uname = item.Uname,
+                Rank = (int)item.Rank,
+                GuardLevel = (int)item.GuardLevel
+            });
+        }
+        OnlineRank?.Invoke(this, (RankList, jsonRawData, rawData));
+        return OnlineRank is not null;
     }
 
     /// <summary>
