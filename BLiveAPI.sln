@@ -1,6 +1,6 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLiveAPI", "BLiveAPI.csproj", "{861DCA84-ED11-4F61-8CB8-AD7366E610BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLiveAPI", "BLiveAPI.csproj", "{861DCA84-ED11-4F61-8CB8-AD7366E610BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

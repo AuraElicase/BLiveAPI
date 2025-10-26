@@ -8,6 +8,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BLiveAPI.Tools;
 using BrotliSharpLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -209,7 +210,7 @@ public class BLiveApi : BLiveEvents
     {
         try
         {
-            var result = new HttpClient().GetAsync("https://data.bilibili.com/v/").Result;
+            var result = new HttpClient().GetAsync("https://www.bilibili.com/").Result;
             return result.Headers.GetValues("Set-Cookie").First().Split(';').First().Split('=').Last();
         }
         catch (ArgumentException)
@@ -222,17 +223,23 @@ public class BLiveApi : BLiveEvents
         }
     }
 
-    private static (ulong, string) GetUidAndKey(ulong? roomId, string sessdata)
+    private static async Task<(ulong, string)> GetUidAndKey(ulong? roomId, string sessdata)
     {
         try
         {
             var client = new HttpClient(new HttpClientHandler { UseCookies = false });
             client.DefaultRequestHeaders.Add("Cookie", $"SESSDATA={sessdata}");
-            var userInfoResult = client.GetStringAsync("https://api.bilibili.com/x/space/v2/myinfo").Result;
+            var userInfoResult = await client.GetStringAsync("https://api.bilibili.com/x/space/v2/myinfo");
             var userInfoJsonResult = (JObject)JsonConvert.DeserializeObject(userInfoResult);
             var uid = (ulong?)userInfoJsonResult?["data"]?["profile"]?["mid"] ?? 0;
             if (uid == 0) client.DefaultRequestHeaders.Remove("Cookie");
-            var danmuInfoResult = client.GetStringAsync($"https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id={roomId}&type=0").Result;
+            Dictionary<string, string> param = new Dictionary<string, string>
+            {
+                    { "id", roomId.ToString() },
+                    { "type", "0"}
+            };
+            string signedParam = await WBISign.sign(param);
+            var danmuInfoResult = await client.GetStringAsync($"https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?{signedParam}");
             var danmuInfoJsonResult = (JObject)JsonConvert.DeserializeObject(danmuInfoResult);
             return (uid, (string)danmuInfoJsonResult?["data"]?["token"]);
         }
@@ -270,7 +277,7 @@ public class BLiveApi : BLiveEvents
         {
             _webSocketCancelToken = new CancellationTokenSource();
             _roomId = GetRoomId(roomId);
-            var (uid, key) = GetUidAndKey(_roomId, sessdata);
+            var (uid, key) = await GetUidAndKey(_roomId, sessdata);
             if (uid == 0 && sessdata != null) throw new SessdataExpireException();
             _clientWebSocket = new ClientWebSocket();
             var authBody = new { uid, roomid = _roomId, protover = protoVer, buvid = GetBuVid(), platform = "web", type = 2, key };
@@ -285,9 +292,10 @@ public class BLiveApi : BLiveEvents
             OnWebSocketClose("WebSocket主动关闭", 0);
             throw new WebSocketCloseException();
         }
-        catch (WebSocketException)
+        catch (WebSocketException e)
         {
-            OnWebSocketError("WebSocket异常关闭", -1);
+            Console.WriteLine(e.WebSocketErrorCode);
+            OnWebSocketError($"WebSocket异常关闭{e.WebSocketErrorCode}", -1);
             _webSocketCancelToken?.Cancel();
             throw new WebSocketErrorException();
         }

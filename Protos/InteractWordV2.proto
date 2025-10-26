@@ -1,0 +1,31 @@
+﻿syntax = "proto3";
+
+package BLiveAPI.Protos;
+option csharp_namespace = "BLiveAPI.Protos";
+
+import "BASE.proto";
+message InteractWordV2 {
+  uint64 uid = 1;
+  string uname = 2;
+  string uname_color = 3;
+  repeated uint64 identities = 4;
+  uint64 msg_type = 5;
+  uint64 roomid = 6;
+  uint64 timestamp = 7;
+  uint64 score = 8;
+  FansMedalInfo fans_medal = 9;
+  uint64 is_spread = 10;
+  string spread_info = 11;
+  ContributionInfo contribution = 12;
+  string spread_desc = 13;
+  uint64 tail_icon = 14;
+  uint64 trigger_time = 15;
+  uint64 privilege_type = 16;
+  uint64 core_user_type = 17;
+  string tail_text = 18;
+  ContributionInfoV2 contribution_v2 = 19;
+  GroupMedalBrief group_medal = 20;
+  bool is_mystery = 21;
+  UserInfo uinfo = 22;
+  UserAnchorRelation relation_tail = 23;
+}

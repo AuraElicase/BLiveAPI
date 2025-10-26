@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using Google.Protobuf;
 using Newtonsoft.Json.Linq;
+using BLiveAPI.Protos;
 
 namespace BLiveAPI;
 
@@ -143,12 +144,19 @@ public abstract class BLiveEvents
     /// </summary>
     public event BLiveEventHandler<(int privilegeType, ulong userId, string userName, JObject jsonRawData, byte[] rawData)> InteractWord;
 
-    [TargetCmd("INTERACT_WORD")]
+    [TargetCmd("INTERACT_WORD_V2")]
     private bool OnInteractWord(JObject jsonRawData, byte[] rawData)
     {
-        var privilegeType = (int)jsonRawData["data"]["privilege_type"];
-        var userId = (ulong)jsonRawData["data"]["uid"];
-        var userName = (string)jsonRawData["data"]["uname"];
+        // 第一层解析
+        var dmscore = (int)jsonRawData["data"]["dmscore"];
+        var base64raw = (string)jsonRawData["data"]["pb"];
+        var protoData = Convert.FromBase64String(base64raw);
+        // 解析protobuf
+        var deSerializedMsg = InteractWordV2.Parser.ParseFrom(protoData);
+        // 第二层解析
+        var privilegeType = (int)deSerializedMsg.PrivilegeType;
+        var userId = deSerializedMsg.Uid;
+        var userName = deSerializedMsg.Uname;
         InteractWord?.Invoke(this, (privilegeType, userId, userName, jsonRawData, rawData));
         return InteractWord is not null;
     }
