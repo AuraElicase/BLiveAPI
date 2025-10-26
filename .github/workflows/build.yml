@@ -1,4 +1,4 @@
-﻿name: Build .NET Framework 4.7.2 Library
+﻿name: Build .NET 9.0 Library
 on:
   push:
     branches:
