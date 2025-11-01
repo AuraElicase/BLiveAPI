@@ -235,7 +235,7 @@ public abstract class BLiveEvents
     /// <summary>
     ///     在线榜
     /// </summary>
-    public event BLiveEventHandler<(List<OnlineRankListItemModel>, JObject jsonRawData, byte[] rawData)> OnlineRank;
+    public event BLiveEventHandler<(List<OnlineRankListItemModel> rankList, JObject jsonRawData, byte[] rawData)> OnlineRank;
 
     [TargetCmd("ONLINE_RANK_V3")]
     private bool OnOnlineRank(JObject jsonRawData, byte[] rawData)
